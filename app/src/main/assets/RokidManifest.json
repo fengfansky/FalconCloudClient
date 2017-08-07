@@ -1,0 +1,16 @@
+{
+  "Task": {
+    "PackageName": "com.rokid.falconcloudclient",
+    "MinAndroidSDK": "L",
+    "TargetAndroidSDK": "20",
+    "FalconSDK": "1",
+    "PackageAffinity": "",
+    "TaskName": "rokid.app.FalconCloudClient",
+    "Version": "0",
+    "AppId": "test",
+    "IgnoreDomain": true,
+    "SystemTask": false,
+    "Type": "Standard",
+    "ModeFlag": []
+  }
+}

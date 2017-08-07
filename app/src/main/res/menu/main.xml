@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/start_cut1"
+        android:title="cutA" />
+    <item
+        android:id="@+id/start_cut2"
+        android:title="cutB" />
+
+    <item
+        android:id="@+id/start_scene1"
+        android:title="sceneA" />
+
+    <item
+        android:id="@+id/start_scene2"
+        android:title="sceneB" />
+    <item
+        android:id="@+id/nlp"
+        android:title="nlp_coming" />
+    <item
+        android:id="@+id/stop_backstageA"
+        android:title="selfstop_backstageA" />
+
+    <item
+        android:id="@+id/stop_backstageB"
+        android:title="selfstop_backstageB--start_cutA" />
+
+    <item
+        android:id="@+id/clean"
+        android:title="clean log" />
+
+</menu>
