@@ -33,6 +33,7 @@ public class CommonResponseHelper {
         actionNode.setVoice(cloudActionResponse.getResponse().getAction().getVoice());
         actionNode.setMedia(cloudActionResponse.getResponse().getAction().getMedia());
         actionNode.setConfirmBean(cloudActionResponse.getResponse().getAction().getConfirm());
+        actionNode.setPickup(cloudActionResponse.getResponse().getAction().getPickup());
 
         return actionNode;
     }

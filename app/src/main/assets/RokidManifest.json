@@ -12,5 +12,17 @@
     "SystemTask": false,
     "Type": "Standard",
     "ModeFlag": []
+  },
+  "Components": {
+    "RokidState": [
+      {
+        "name": "com.rokid.falconcloudclient.state.CloudCutState",
+        "state": "cut"
+      },
+      {
+        "name": "com.rokid.falconcloudclient.state.CloudSceneState",
+        "state": "scene"
+      }
+    ]
   }
 }

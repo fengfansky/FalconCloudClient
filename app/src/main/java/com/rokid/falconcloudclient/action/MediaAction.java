@@ -14,11 +14,12 @@ import tv.danmaku.ijk.media.player.IMediaPlayer;
 
 public class MediaAction extends BaseAction<MediaBean> {
 
-    private static volatile MediaAction mediaAction;
+    private CloudStateMonitor cloudStateMonitor;
 
     private RKAudioPlayer rkAudioPlayer;
 
-    private MediaAction() {
+    public MediaAction(CloudStateMonitor cloudStateMonitor) {
+        this.cloudStateMonitor = cloudStateMonitor;
         initRKAudioPlayer();
     }
 
@@ -28,8 +29,8 @@ public class MediaAction extends BaseAction<MediaBean> {
         rkAudioPlayer.setmOnPreparedListener(new IMediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(IMediaPlayer mp) {
-                if (FalconCloudTask.getInstance().getCloudStateMonitor() != null){
-                    FalconCloudTask.getInstance().getCloudStateMonitor().onMediaStart();
+                if (cloudStateMonitor != null){
+                    cloudStateMonitor.onMediaStart();
                 }
             }
         });
@@ -38,8 +39,8 @@ public class MediaAction extends BaseAction<MediaBean> {
             @Override
             public boolean onError(IMediaPlayer mp, int what, int extra) {
                 Logger.d(" onMediaError what : " + what + " extra :" + extra);
-                if (FalconCloudTask.getInstance().getCloudStateMonitor() != null) {
-                    FalconCloudTask.getInstance().getCloudStateMonitor().onMediaError(extra);
+                if (cloudStateMonitor != null) {
+                    cloudStateMonitor.onMediaError(extra);
                 }
                 return false;
             }
@@ -48,39 +49,29 @@ public class MediaAction extends BaseAction<MediaBean> {
         rkAudioPlayer.setmOnCompletionListener(new IMediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(IMediaPlayer mp) {
-                if (FalconCloudTask.getInstance().getCloudStateMonitor() != null) {
-                    FalconCloudTask.getInstance().getCloudStateMonitor().onMediaStop();
+                if (cloudStateMonitor != null) {
+                    cloudStateMonitor.onMediaStop();
                 }
             }
         });
         rkAudioPlayer.setmOnPausedListener(new IMediaPlayer.OnPausedListener() {
             @Override
             public void onPaused(IMediaPlayer mp) {
-                if (FalconCloudTask.getInstance().getCloudStateMonitor() != null) {
-                    FalconCloudTask.getInstance().getCloudStateMonitor().onMediaPause((int) mp.getCurrentPosition());
+                if (cloudStateMonitor != null) {
+                    cloudStateMonitor.onMediaPause((int) mp.getCurrentPosition());
                 }
             }
         });
         rkAudioPlayer.setmOnStopedListener(new IMediaPlayer.OnStopedListener() {
             @Override
             public void onStoped(IMediaPlayer mp) {
-                if (FalconCloudTask.getInstance().getCloudStateMonitor() != null) {
-                    FalconCloudTask.getInstance().getCloudStateMonitor().onMediaStop();
+                if (cloudStateMonitor != null) {
+                    cloudStateMonitor.onMediaStop();
                 }
             }
         });
     }
-
-    public static MediaAction getInstance() {
-        if (mediaAction == null) {
-            synchronized (MediaAction.class) {
-                if (mediaAction == null)
-                    mediaAction = new MediaAction();
-            }
-        }
-        return mediaAction;
-    }
-
+    
     public synchronized void userStartPlay(MediaBean mediaBean) {
         Logger.d(" rkAudioPlayer is null ? " + (rkAudioPlayer == null));
         if (mediaBean == null) {
@@ -99,7 +90,10 @@ public class MediaAction extends BaseAction<MediaBean> {
 
         Logger.d("play mediaBean : " + mediaBean);
 
-        String url = mediaBeanItem.getUrl() + "&" + mediaBeanItem.getToken();
+        String url = mediaBeanItem.getUrl();
+        if (!TextUtils.isEmpty(mediaBeanItem.getToken())) {
+            url.concat("&").concat(mediaBeanItem.getToken());
+        }
 
         if (TextUtils.isEmpty(url)) {
             Logger.d("media url invalidate!");
@@ -107,9 +101,8 @@ public class MediaAction extends BaseAction<MediaBean> {
         }
 
         Logger.d("start play media url : " + url);
-        if (FalconCloudTask.getInstance().getCloudStateMonitor() != null) {
-            FalconCloudTask.getInstance().getCloudStateMonitor().setUserMediaControlType(CloudStateMonitor.USER_MEDIA_CONTROL_TYPE.MEDIA_START);
-            FalconCloudTask.getInstance().getCloudStateMonitor().setCurrentMediaState(CloudStateMonitor.MEDIA_STATE.MEDIA_START);
+        if (cloudStateMonitor != null) {
+            cloudStateMonitor.setUserMediaControlType(CloudStateMonitor.USER_MEDIA_CONTROL_TYPE.MEDIA_START);
         }
         rkAudioPlayer.setVideoURI(Uri.parse(url));
         rkAudioPlayer.start();
@@ -118,6 +111,7 @@ public class MediaAction extends BaseAction<MediaBean> {
 
     @Override
     public synchronized void pausePlay() {
+        Logger.d(" pausePlay  canPause: " + rkAudioPlayer.canPause());
         if (rkAudioPlayer != null && rkAudioPlayer.canPause()) {
             rkAudioPlayer.pause();
         }
@@ -125,6 +119,7 @@ public class MediaAction extends BaseAction<MediaBean> {
 
     @Override
     public synchronized void stopPlay() {
+        Logger.d(" stopPlay");
         if (rkAudioPlayer != null) {
             rkAudioPlayer.stop();
         }
@@ -132,10 +127,11 @@ public class MediaAction extends BaseAction<MediaBean> {
 
     @Override
     public synchronized void resumePlay() {
+        Logger.d(" resumePlay isPlaying: " + rkAudioPlayer.isPlaying());
         if (rkAudioPlayer != null && !rkAudioPlayer.isPlaying()) {
             rkAudioPlayer.start();
-            if (FalconCloudTask.getInstance().getCloudStateMonitor() != null) {
-                FalconCloudTask.getInstance().getCloudStateMonitor().onMediaResume();
+            if (cloudStateMonitor != null) {
+                cloudStateMonitor.onMediaResume();
             }
         }
     }
@@ -143,24 +139,24 @@ public class MediaAction extends BaseAction<MediaBean> {
     @Override
     public synchronized void userPausedPlay() {
         pausePlay();
-        if (FalconCloudTask.getInstance().getCloudStateMonitor() != null) {
-            FalconCloudTask.getInstance().getCloudStateMonitor().setUserMediaControlType(CloudStateMonitor.USER_MEDIA_CONTROL_TYPE.MEDIA_PAUSE);
+        if (cloudStateMonitor != null) {
+            cloudStateMonitor.setUserMediaControlType(CloudStateMonitor.USER_MEDIA_CONTROL_TYPE.MEDIA_PAUSE);
         }
     }
 
     @Override
     public synchronized void userStopPlay() {
         stopPlay();
-        if (FalconCloudTask.getInstance().getCloudStateMonitor() != null) {
-            FalconCloudTask.getInstance().getCloudStateMonitor().setUserMediaControlType(CloudStateMonitor.USER_MEDIA_CONTROL_TYPE.MEDIA_STOP);
+        if (cloudStateMonitor != null) {
+            cloudStateMonitor.setUserMediaControlType(CloudStateMonitor.USER_MEDIA_CONTROL_TYPE.MEDIA_STOP);
         }
     }
 
     @Override
     public synchronized void userResumePlay() {
         resumePlay();
-        if (FalconCloudTask.getInstance().getCloudStateMonitor() != null) {
-            FalconCloudTask.getInstance().getCloudStateMonitor().setUserMediaControlType(CloudStateMonitor.USER_MEDIA_CONTROL_TYPE.MEDIA_RESUME);
+        if (cloudStateMonitor != null) {
+            cloudStateMonitor.setUserMediaControlType(CloudStateMonitor.USER_MEDIA_CONTROL_TYPE.MEDIA_RESUME);
         }
     }
 

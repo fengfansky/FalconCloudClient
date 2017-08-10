@@ -6,6 +6,7 @@ import android.os.Parcelable;
 import com.rokid.falconcloudclient.bean.base.BaseBean;
 import com.rokid.falconcloudclient.bean.response.responseinfo.action.confirm.ConfirmBean;
 import com.rokid.falconcloudclient.bean.response.responseinfo.action.media.MediaBean;
+import com.rokid.falconcloudclient.bean.response.responseinfo.action.pickup.PickupBean;
 import com.rokid.falconcloudclient.bean.response.responseinfo.action.voice.VoiceBean;
 
 /**
@@ -24,6 +25,7 @@ public class ActionNode extends BaseBean implements Parcelable{
     private VoiceBean voice;
     private MediaBean media;
     private ConfirmBean confirmBean;
+    private PickupBean pickup;
 
     public ActionNode() {
     }
@@ -138,6 +140,13 @@ public class ActionNode extends BaseBean implements Parcelable{
         this.confirmBean = confirmBean;
     }
 
+    public PickupBean getPickup() {
+        return pickup;
+    }
+
+    public void setPickup(PickupBean pickup) {
+        this.pickup = pickup;
+    }
 
     @Override
     public int describeContents() {

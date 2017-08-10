@@ -91,7 +91,7 @@ public class ResponseParser {
 
     }
 
-    public ActionNode parseMessage(String asr, String nlp, String cloudAction) throws IOException {
+    public ActionNode parseMessage( String nlp,String asr, String cloudAction) throws IOException {
 
         if (TextUtils.isEmpty(nlp) || TextUtils.isEmpty(cloudAction)) {
             Logger.d("nlp or action is null ");
@@ -127,11 +127,13 @@ public class ResponseParser {
             return null;
         }
 
-        CommonResponseBean commonResponseBean = null;
+        CommonResponseBean commonResponseBean = new CommonResponseBean();
 
         commonResponseBean.setAsr(asr);
         commonResponseBean.setNlp(nlpBean);
         commonResponseBean.setAction(cloudActionResponseBean);
+
+        Logger.d("commonBean : " + commonResponseBean.toString());
 
         ActionNode actionNode = CommonResponseHelper.generateActionNode(commonResponseBean);
 
@@ -145,3 +147,5 @@ public class ResponseParser {
     }
 
 }
+
+

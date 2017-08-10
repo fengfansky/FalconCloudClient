@@ -1,8 +1,7 @@
 package com.rokid.falconcloudclient.state;
 
-import com.rokid.falconcloudclient.action.MediaAction;
-import com.rokid.falconcloudclient.action.VoiceAction;
 import com.rokid.falconcloudclient.http.HttpClientWrapper;
+import com.rokid.falconcloudclient.util.Logger;
 import com.rokid.rkcontext.RokidState;
 
 /**
@@ -23,15 +22,26 @@ public class CloudCutStateMonitor extends CloudStateMonitor {
 
     @Override
     public void onStatePause() {
-        VoiceAction.getInstance().stopPlay();
-        MediaAction.getInstance().stopPlay();
+        Logger.d("form: cut  ,  mediaState: " + currentMediaState + " voiceState : " + currentVoiceState);
+        if (currentMediaState == MEDIA_STATE.MEDIA_START || userMediaControlType == USER_MEDIA_CONTROL_TYPE.MEDIA_START){
+            voiceAction.stopPlay();
+        }
+        if (currentVoiceState == VOICE_STATE.VOICE_START || userVoiceControlType == USER_VOICE_CONTROL_TYPE.VOICE_START){
+            voiceAction.stopPlay();
+        }
         HttpClientWrapper.getInstance().close();
-        finishTask();
+        rokidState.finish();
     }
 
     @Override
     public void onStateDestory() {
 
+    }
+
+    @Override
+    protected void actionFinished() {
+        super.actionFinished();
+        rokidState.finish();
     }
 
 }

@@ -25,6 +25,7 @@ import com.rokid.falconcloudclient.util.Logger;
 import com.rokid.rkcontext.RKBaseTask;
 import com.rokid.rkcontext.RokidState;
 import com.rokid.rkcontext.utils.LogUtils;
+import com.rokid.rkcontext.utils.NlpMockUtils;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -33,18 +34,19 @@ import java.lang.reflect.Method;
 /**
  * Modified by fanfeng on 2017/7/20.
  */
-public class FalconCloudTask extends RKBaseTask implements CloudStateMonitor.TaskProcessCallback{
+public class FalconCloudTask extends RKBaseTask{
 
     private static FalconCloudTask instance;
+    public static final String DATA_TAG = "data";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         instance = this;
         BaseUrlConfig.initDeviceInfo();
-
+        NlpMockUtils.setMockNlp(true);
         //This for test
-        LogUtils.addLogListener(logListener);
+//        LogUtils.addLogListener(logListener);
 
         setNeedsMenuKey();
     }
@@ -54,44 +56,46 @@ public class FalconCloudTask extends RKBaseTask implements CloudStateMonitor.Tas
     }
 
     @Override
-    protected void onNlpMessage(String nlp) {
-        //TODO set asr action
-        String asr = "";
-        String actionStr = "";
-
+    protected void onNlpMessage(String nlp, String asr, String action) {
         ActionNode actionNode = null;
+        Logger.d(" nlp " + nlp);
+        Logger.d(" asr " + asr);
+        Logger.d(" action " + action);
         try {
-            actionNode = ResponseParser.getInstance().parseMessage(asr, nlp, actionStr);
+            actionNode = ResponseParser.getInstance().parseMessage(nlp, action, action);
         } catch (IOException e) {
             Logger.e(" speak error info exception !");
             e.printStackTrace();
         }
 
-        if (actionNode == null){
+        if (actionNode == null) {
             try {
                 ErrorPromoter.getInstance().speakErrorPromote(ErrorPromoter.ERROR_TYPE.DATA_INVALID, null);
             } catch (IOException e) {
                 Logger.e(" speak error info exception !");
                 e.printStackTrace();
             }
+            return;
         }
 
         Bundle bundle = new Bundle();
-        bundle.putParcelable("data",actionNode);
+        bundle.putParcelable(DATA_TAG, actionNode);
 
-        switch (actionNode.getForm()){
-            case ActionBean.FORM_CUT:
+        switch (actionNode.getForm()) {
+            case ActionBean.FORM_SCENE:
                 startState(CloudSceneState.class, bundle);
                 break;
-            case ActionBean.FORM_SCENE:
+            case ActionBean.FORM_CUT:
                 startState(CloudCutState.class, bundle);
                 break;
         }
-        if(getCloudStateMonitor() != null){
+      /*  if(getCloudStateMonitor() != null){
             getCloudStateMonitor().setTaskProcessCallback(this);
-        }
-
+        } else {
+            Logger.d(" getCloudStateMonitor is null !");
+        }*/
     }
+
 
     @Override
     protected RokidState getState() {
@@ -99,45 +103,35 @@ public class FalconCloudTask extends RKBaseTask implements CloudStateMonitor.Tas
         return super.getState();
     }
 
-    public CloudStateMonitor getCloudStateMonitor(){
-        if (getState() == null){
+    public CloudStateMonitor getCloudStateMonitor() {
+        if (getState() == null) {
             Logger.d(" rokidState is null !");
             return null;
         }
 
-        if (getState() instanceof CloudSceneState){
+        Logger.d(" getState() is  " + getState().getStateEnum());
+
+        if (getState() instanceof CloudSceneState) {
             return ((CloudSceneState) getState()).getCloudStateMonitor();
-        }else if (getState() instanceof CloudCutState){
+        } else if (getState() instanceof CloudCutState) {
             return ((CloudCutState) getState()).getCloudStateMonitor();
         }
 
         return null;
     }
 
-    public void openSiren() {
-        Logger.d(" process confirm ");
+    public void openSiren(boolean pickupEnable, int durationInMilliseconds) {
+        Logger.d(" process openSiren ");
         Intent intent = new Intent();
         ComponentName compontent = new ComponentName("com.rokid.activation", "com.rokid.activation.service.CoreService");
         intent.setComponent(compontent);
         intent.putExtra("InputAction", "confirmEvent");
         Bundle bundle = new Bundle();
-        bundle.putInt("isConfirm", 1);   //isConfirm  参数 目前支持 1: 打开拾音 , 0: 关闭拾音
+        bundle.putBoolean("isConfirm", pickupEnable);//拾音打开或关闭
+        bundle.putInt("durationInMilliseconds", durationInMilliseconds);//当enable=true时，在用户不说话的情况下，拾音打开持续时间
         intent.putExtra("intent", bundle);
         startService(intent);
     }
-
-    @Override
-    public void onAllTaskFinished() {
-        //TODO 此处应用应该置于后台 回调OnPaused
-        finish();
-    }
-
-    @Override
-    public void onExitCallback() {
-        //此处应用应该destory
-        finish();
-    }
-
 
     /************* for  test ***********/
     private TextView tv;
@@ -166,9 +160,9 @@ public class FalconCloudTask extends RKBaseTask implements CloudStateMonitor.Tas
     protected View initBodyView() {
 
         View view = inflate(R.layout.activity_main);
-        tv = (TextView)view.findViewById(R.id.textView);
+        tv = (TextView) view.findViewById(R.id.textView);
         tv.setMovementMethod(ScrollingMovementMethod.getInstance());
-        tv2 = (TextView)view.findViewById(R.id.textView2);
+        tv2 = (TextView) view.findViewById(R.id.textView2);
         tv2.setMovementMethod(ScrollingMovementMethod.getInstance());
 
         return view;
@@ -178,10 +172,10 @@ public class FalconCloudTask extends RKBaseTask implements CloudStateMonitor.Tas
     private LogUtils.LogListener logListener = new LogUtils.LogListener() {
         @Override
         public void onLog(String tag, String msg) {
-            if("RokidState".equals(tag)){
+            if ("RokidState".equals(tag)) {
                 //
                 tv.append(msg + "\n");
-            }else if("BackStage".equals(tag)){
+            } else if ("BackStage".equals(tag)) {
                 //
                 tv2.append(msg + "\n");
             }
@@ -195,19 +189,18 @@ public class FalconCloudTask extends RKBaseTask implements CloudStateMonitor.Tas
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
+        switch (item.getItemId()) {
             case R.id.start_cut1:
                 Bundle ba = new Bundle();
-                ba.putString("param1","data1");
-                startState(CloudCutState.class,ba);
+                ba.putString("param1", "data1");
+                startState(CloudCutState.class, ba);
                 break;
             case R.id.start_scene1:
                 Bundle bc = new Bundle();
-                bc.putString("param3","data3");
-                startState(CloudSceneState.class,bc);
+                bc.putString("param3", "data3");
+                startState(CloudSceneState.class, bc);
                 break;
             case R.id.nlp:
-                onNlpMessage("I'm nlp message");
                 break;
             case R.id.stop_backstageA:
                 sendBroadcast(new Intent("stop_backstageA"));

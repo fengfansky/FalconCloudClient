@@ -20,6 +20,8 @@ public class HttpClientWrapper {
     private static final int READ_TIME_OUT = 3;
     private static final int WRITE_TIME_OUT = 3;
 
+    private boolean isSendRequest = false;
+
     private static final String CONTENT_TYPE = "application/octet-stream";
     private Response response;
 
@@ -48,14 +50,15 @@ public class HttpClientWrapper {
                         , byteArrayOutputStream.toByteArray()))
                 .build();
          response = okHttpClient.newCall(request).execute();
-
+         isSendRequest = true;
         return response;
     }
 
     public void close(){
-        if (response != null && response.body() != null){
+        if (response != null && response.body() != null && isSendRequest){
             try {
                 response.body().close();
+                isSendRequest = false;
             } catch (IOException e) {
                 e.printStackTrace();
             }
