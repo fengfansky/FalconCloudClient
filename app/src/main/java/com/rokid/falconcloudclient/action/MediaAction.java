@@ -62,14 +62,14 @@ public class MediaAction extends BaseAction<MediaBean> {
                 }
             }
         });
-        rkAudioPlayer.setmOnStopedListener(new IMediaPlayer.OnStopedListener() {
+        /*rkAudioPlayer.setmOnStopedListener(new IMediaPlayer.OnStopedListener() {
             @Override
             public void onStoped(IMediaPlayer mp) {
                 if (cloudStateMonitor != null) {
                     cloudStateMonitor.onMediaStop();
                 }
             }
-        });
+        });*/
     }
     
     public synchronized void userStartPlay(MediaBean mediaBean) {
@@ -92,7 +92,10 @@ public class MediaAction extends BaseAction<MediaBean> {
 
         String url = mediaBeanItem.getUrl();
         if (!TextUtils.isEmpty(mediaBeanItem.getToken())) {
-            url.concat("&").concat(mediaBeanItem.getToken());
+            Logger.d("token not null ! token: " + mediaBeanItem.getToken());
+            url = url + "&token=" + mediaBeanItem.getToken();
+        }else {
+            Logger.d("token is null! ");
         }
 
         if (TextUtils.isEmpty(url)) {

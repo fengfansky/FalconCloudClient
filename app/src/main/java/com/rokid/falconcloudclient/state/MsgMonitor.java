@@ -8,8 +8,8 @@ import com.rokid.falconcloudclient.bean.ActionNode;
 
 public interface MsgMonitor {
 
-    void onNewIntentActionNode(ActionNode actionNode);
+    void onNewIntent(String nlp, String asr, String action);
 
-    void onNewEventActionNode(ActionNode actionNode);
+    void onNewEvent(ActionNode actionNode);
 
 }

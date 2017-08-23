@@ -10,14 +10,11 @@
     <!-- Needed only if your app targets Android 5.0 (API level 21) or higher. -->
     <application>
 
-        <activity android:name="com.rokid.falconcloudclient.FalconCloudTask" >
+        <Service android:name="com.rokid.falconcloudclient.FalconCloudTask"
+            android:enabled = "true"
+            android:exported = "true">
+        </Service>
 
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-            </activity>
     </application>
 
 </manifest>

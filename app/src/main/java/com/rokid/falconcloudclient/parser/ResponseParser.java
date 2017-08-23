@@ -86,7 +86,7 @@ public class ResponseParser {
 
         //update appState
         if (FalconCloudTask.getInstance().getCloudStateMonitor() != null) {
-            FalconCloudTask.getInstance().getCloudStateMonitor().onNewEventActionNode(actionNode);
+            FalconCloudTask.getInstance().getCloudStateMonitor().onNewEvent(actionNode);
         }
 
     }

@@ -7,7 +7,7 @@
     "PackageAffinity": "",
     "TaskName": "rokid.app.FalconCloudClient",
     "Version": "0",
-    "AppId": "test",
+    "AppId": "falconcloudclient",
     "IgnoreDomain": true,
     "SystemTask": false,
     "Type": "Standard",

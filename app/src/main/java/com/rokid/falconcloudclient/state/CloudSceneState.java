@@ -1,56 +1,47 @@
 package com.rokid.falconcloudclient.state;
 
-import android.os.Bundle;
-import android.view.View;
-
-import com.rokid.falconcloudclient.bean.ActionNode;
 import com.rokid.falconcloudclient.util.Logger;
-import com.rokid.rkcontext.RKBaseTask;
-import com.rokid.rkcontext.SceneState;
 
-public class CloudSceneState extends SceneState{
+import rokid.context.SceneState;
+
+public class CloudSceneState extends SceneState {
 
     private CloudStateMonitor cloudStateMonitor;
 
-    public CloudSceneState(RKBaseTask baseTask) {
-        super(baseTask);
+    public CloudSceneState() {
+        super();
         Logger.d("CloudSceneState create ");
         cloudStateMonitor = new CloudSceneStateMonitor(this);
     }
 
     @Override
-    protected void onReceiveData(Bundle data) {
-        super.onReceiveData(data);
-        cloudStateMonitor.onNewIntentActionNode((ActionNode) data.getParcelable("data"));
+    public void onNlpMessage(String nlp, String asr, String action) {
+        super.onNlpMessage(nlp, asr, action);
+        cloudStateMonitor.onNewIntent(nlp, asr, action);
     }
 
     @Override
-    protected void onStateResume() {
+    public void onStateResume() {
         super.onStateResume();
         cloudStateMonitor.onStateResume();
     }
 
     @Override
-    protected void onStatePause() {
+    public void onStatePause() {
         super.onStatePause();
         cloudStateMonitor.onStatePause();
     }
 
     @Override
-    protected void onStateCreate() {
+    public void onStateCreate() {
         super.onStateCreate();
         cloudStateMonitor.onStatePause();
     }
 
     @Override
-    protected void onStateDestroy() {
+    public void onStateDestroy() {
         super.onStateDestroy();
         cloudStateMonitor.onStateDestory();
-    }
-
-    @Override
-    protected View inflateContentView() {
-        return null;
     }
 
     public CloudStateMonitor getCloudStateMonitor() {

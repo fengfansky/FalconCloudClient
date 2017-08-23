@@ -1,8 +1,9 @@
 package com.rokid.falconcloudclient.state;
 
-import com.rokid.falconcloudclient.http.HttpClientWrapper;
+import com.rokid.falconcloudclient.FalconCloudTask;
 import com.rokid.falconcloudclient.util.Logger;
-import com.rokid.rkcontext.RokidState;
+
+import rokid.context.RokidState;
 
 /**
  * Created by fanfeng on 2017/8/6.
@@ -23,14 +24,13 @@ public class CloudCutStateMonitor extends CloudStateMonitor {
     @Override
     public void onStatePause() {
         Logger.d("form: cut  ,  mediaState: " + currentMediaState + " voiceState : " + currentVoiceState);
-        if (currentMediaState == MEDIA_STATE.MEDIA_START || userMediaControlType == USER_MEDIA_CONTROL_TYPE.MEDIA_START){
+        if (currentMediaState == MEDIA_STATE.MEDIA_START || userMediaControlType == USER_MEDIA_CONTROL_TYPE.MEDIA_START) {
             voiceAction.stopPlay();
         }
-        if (currentVoiceState == VOICE_STATE.VOICE_START || userVoiceControlType == USER_VOICE_CONTROL_TYPE.VOICE_START){
+        if (currentVoiceState == VOICE_STATE.VOICE_START || userVoiceControlType == USER_VOICE_CONTROL_TYPE.VOICE_START) {
             voiceAction.stopPlay();
         }
-        HttpClientWrapper.getInstance().close();
-        rokidState.finish();
+        FalconCloudTask.getInstance().finishState(rokidState, true);
     }
 
     @Override
@@ -41,7 +41,7 @@ public class CloudCutStateMonitor extends CloudStateMonitor {
     @Override
     protected void actionFinished() {
         super.actionFinished();
-        rokidState.finish();
+        FalconCloudTask.getInstance().finishState(rokidState, true);
     }
 
 }

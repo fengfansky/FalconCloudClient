@@ -2,7 +2,7 @@ package com.rokid.falconcloudclient.state;
 
 import com.rokid.falconcloudclient.http.HttpClientWrapper;
 import com.rokid.falconcloudclient.util.Logger;
-import com.rokid.rkcontext.RokidState;
+import rokid.context.RokidState;
 
 /**
  * Created by fanfeng on 2017/8/6.
@@ -47,6 +47,6 @@ public class CloudSceneStateMonitor extends CloudStateMonitor {
 
     public void actionFinished() {
         super.actionFinished();
-        Logger.d("form: " + rokidState.getStateEnum() + " actionFinished actionFinished");
+        Logger.d("form: " + rokidState.getStateType() + " actionFinished actionFinished");
     }
 }

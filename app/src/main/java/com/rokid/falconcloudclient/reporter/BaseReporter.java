@@ -47,11 +47,6 @@ public abstract class BaseReporter implements Runnable {
             return;
         }
 
-        if (FalconCloudTask.getInstance().getCloudStateMonitor().isShouldEndSession()) {
-            Logger.d("cloudscene isShouldEndSession true , dont't sendEventReport !");
-            return;
-        }
-
         SendEvent.SendEventRequest eventRequest =
                 SendEventCreator.generateSendEventRequest(appId, event, extra);
         Logger.d(" eventRequest : " + eventRequest.toString());

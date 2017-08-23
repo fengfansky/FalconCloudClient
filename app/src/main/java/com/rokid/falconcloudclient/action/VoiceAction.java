@@ -2,21 +2,20 @@ package com.rokid.falconcloudclient.action;
 
 import android.text.TextUtils;
 
-import com.rokid.falconcloudclient.FalconCloudTask;
 import com.rokid.falconcloudclient.bean.response.responseinfo.action.voice.VoiceBean;
 import com.rokid.falconcloudclient.bean.response.responseinfo.action.voice.VoiceItemBean;
 import com.rokid.falconcloudclient.state.CloudStateMonitor;
 import com.rokid.falconcloudclient.util.Logger;
 
-import rokid.os.RKTTS;
-import rokid.os.RKTTSCallback;
+import rokid.tts.Tts;
+import rokid.tts.TtsCallback;
 
 public class VoiceAction extends BaseAction<VoiceBean> {
 
     private VoiceBean voiceBean;
 
     private static final int STOP = -1;
-    private RKTTS mRktts = new RKTTS();
+    private Tts mRktts = new Tts();
     private volatile int ttsId = STOP;
     private boolean isPaused = false;
     private CloudStateMonitor cloudStateMonitor;
@@ -44,7 +43,7 @@ public class VoiceAction extends BaseAction<VoiceBean> {
             }
 
             if (ttsId > 0) {
-                mRktts.stop(ttsId);
+                mRktts.cancel(ttsId);
             }
 
             ttsId = mRktts.speak(ttsContent, rkttsCallback);
@@ -52,10 +51,9 @@ public class VoiceAction extends BaseAction<VoiceBean> {
         }
     }
 
-    private RKTTSCallback rkttsCallback = new RKTTSCallback() {
+    private TtsCallback rkttsCallback = new TtsCallback() {
         @Override
         public void onStart(int id) {
-            super.onStart(id);
             Logger.i("TTS is onTTSStart - id: " + id);
             if (cloudStateMonitor != null){
                 cloudStateMonitor.onVoiceStart();
@@ -64,7 +62,6 @@ public class VoiceAction extends BaseAction<VoiceBean> {
 
         @Override
         public void onCancel(int id) {
-            super.onCancel(id);
             Logger.i("TTS is onCancel - id: " + id + ", current id: " + ttsId + " isPaused : " + isPaused);
             if (id != ttsId) {
                 Logger.i("The new tts is already speaking, previous tts stop should not ttsCallback");
@@ -82,7 +79,6 @@ public class VoiceAction extends BaseAction<VoiceBean> {
 
         @Override
         public void onComplete(int id) {
-            super.onComplete(id);
             Logger.i("TTS is onComplete - id: " + id);
             ttsId = STOP;
             if (cloudStateMonitor != null) {
@@ -92,7 +88,6 @@ public class VoiceAction extends BaseAction<VoiceBean> {
 
         @Override
         public void onError(int id, int err) {
-            super.onError(id, err);
             Logger.i("tts onError - id: " + id + ", error: " + err);
             ttsId = STOP;
             if (cloudStateMonitor != null) {
@@ -107,7 +102,7 @@ public class VoiceAction extends BaseAction<VoiceBean> {
         Logger.d("pause play voice");
         if (ttsId > 0){
             isPaused = true;
-            mRktts.stop(ttsId);
+            mRktts.cancel(ttsId);
         }
     }
 
@@ -126,7 +121,7 @@ public class VoiceAction extends BaseAction<VoiceBean> {
         voiceBean = null;
         if (ttsId > 0) {
             isPaused = false;
-            mRktts.stop(ttsId);
+            mRktts.cancel(ttsId);
         }
     }
 

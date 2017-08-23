@@ -1,12 +1,17 @@
 package com.rokid.falconcloudclient.http;
 
-import android.os.IBinder;
+import android.os.Environment;
 import android.text.TextUtils;
 
+import com.google.gson.Gson;
+import com.rokid.falconcloudclient.bean.DeviceConfig;
 import com.rokid.falconcloudclient.util.Logger;
 import com.rokid.falconcloudclient.util.MD5Utils;
 
-import java.lang.reflect.Method;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -23,7 +28,7 @@ public class BaseUrlConfig {
 
     private static String mHost;
 
-    private static Map<String,String> deviceMap;
+    private static DeviceConfig deviceConfig;
 
     private static final String KEY_HOST = "event_req_host";
 
@@ -49,40 +54,38 @@ public class BaseUrlConfig {
 
     public static void initDeviceInfo() {
 
-        IBinder runtimeBinder ;
+        String configFilePath = Environment.getRootDirectory().getAbsolutePath() + "/etc/" + "openvoice_profile.json";
+
+        String deviceConfigStr = null;
         try {
-            Class<?> clazz = Class.forName("android.os.ServiceManager");
-            Method method = clazz.getMethod("getService",String.class);
-            runtimeBinder = (IBinder) method.invoke(null,"runtime_java");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
-
-        if(runtimeBinder == null){
-            Logger.d(" runtime binder is null ");
-            return;
-        }
-        rokid.os.IRuntimeService runtime = rokid.os.IRuntimeService.Stub.asInterface(runtimeBinder);
-        try{
-            deviceMap = runtime.getPlatformAccountInfo();
-        }catch(Exception e){
+            BufferedReader reader = new BufferedReader(new FileReader(configFilePath));
+            String readLine;
+            StringBuilder sb = new StringBuilder();
+            while ((readLine = reader.readLine()) != null) {
+                sb.append(readLine);
+            }
+            deviceConfigStr = sb.toString();
+            Logger.d(" configStr : " + sb.toString());
+            reader.close();
+        } catch (FileNotFoundException e) {
+            Logger.e(" openvoice_profile.json not found !");
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        if (deviceMap == null || deviceMap.isEmpty()) {
-            Logger.d(" deviceMap is null ");
+        if (TextUtils.isEmpty(deviceConfigStr)){
+            Logger.d(" deviceConfig is null !");
             return;
         }
 
-        Logger.d(" deviceMap is " + deviceMap.toString());
+        deviceConfig = new Gson().fromJson(deviceConfigStr,DeviceConfig.class);
+        mHost = deviceConfig.getEvent_req_host();
 
-        mHost = deviceMap.get(KEY_HOST);
-
+        Logger.d(" deviceConfig : " +  deviceConfig.toString());
     }
 
     public static String getUrl() {
 
-        if (mHost == null || mHost.isEmpty()){
+        if (mHost == null || mHost.isEmpty()) {
             mHost = DEFAULT_HOST;
         }
 
@@ -93,20 +96,20 @@ public class BaseUrlConfig {
 
         params = new LinkedHashMap<>();
 
-        if (deviceMap == null || deviceMap.isEmpty()) {
-            Logger.e(" deviceMap is null ");
+        if (deviceConfig == null){
+            Logger.d(" deviceConfig is null ");
             return null;
         }
 
-        putUnEmptyParam(PARAM_KEY_KEY, deviceMap.get(PARAM_KEY_KEY));
-        putUnEmptyParam(PARAM_KEY_DEVICE_TYPE_ID, deviceMap.get(PARAM_KEY_DEVICE_TYPE_ID));
-        putUnEmptyParam(PARAM_KEY_DEVICE_ID, deviceMap.get(PARAM_KEY_DEVICE_ID));
+        putUnEmptyParam(PARAM_KEY_KEY, deviceConfig.getKey());
+        putUnEmptyParam(PARAM_KEY_DEVICE_TYPE_ID, deviceConfig.getDevice_type_id());
+        putUnEmptyParam(PARAM_KEY_DEVICE_ID, deviceConfig.getDevice_id());
 
         putUnEmptyParam(PARAM_KEY_SERVICE, PARAM_VALUE_SERVICE);
-        putUnEmptyParam(PARAM_KEY_VERSION, deviceMap.get("api_version"));
+        putUnEmptyParam(PARAM_KEY_VERSION, deviceConfig.getApi_version());
         putUnEmptyParam(PARAM_KEY_TIME, String.valueOf(System.currentTimeMillis()));
-        putUnEmptyParam(PARAM_KEY_SIGN, MD5Utils.generateMD5(params, deviceMap.get(PARAM_KEY_SECRET)));
-        if (params.isEmpty()){
+        putUnEmptyParam(PARAM_KEY_SIGN, MD5Utils.generateMD5(params, deviceConfig.getSecret()));
+        if (params.isEmpty()) {
             Logger.d("param is null !");
             return null;
         }

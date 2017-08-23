@@ -15,7 +15,7 @@ import com.rokid.falconcloudclient.reporter.MediaReporter;
 import com.rokid.falconcloudclient.reporter.ReporterManager;
 import com.rokid.falconcloudclient.reporter.VoiceReporter;
 import com.rokid.falconcloudclient.util.Logger;
-import com.rokid.rkcontext.RokidState;
+import rokid.context.RokidState;
 import com.squareup.okhttp.Response;
 
 import java.io.IOException;
@@ -57,14 +57,17 @@ public abstract class CloudStateMonitor implements ICloudStateMonitor {
 
     public ReporterManager reporterManager = ReporterManager.getInstance();
 
-    public boolean isShouldEndSession() {
-        return shouldEndSession;
-    }
-
     @Override
-    public synchronized void onNewIntentActionNode(ActionNode actionNode) {
+    public void onNewIntent(String nlp, String asr, String action) {
+        ActionNode actionNode = null;
 
-        Logger.d("form: " + rokidState.getStateEnum() + " onNewIntentActionNode actioNode : " + actionNode);
+        try {
+            actionNode = ResponseParser.getInstance().parseMessage(nlp, asr, action);
+        } catch (IOException e) {
+            Logger.e(" speak error info exception !");
+            e.printStackTrace();
+        }
+        Logger.d("form: " + rokidState.getStateType() + " onNewIntent actioNode : " + actionNode);
         if (actionNode != null) {
             if (TextUtils.isEmpty(actionNode.getAppId())) {
                 Logger.d("new cloudAppId is null !");
@@ -73,7 +76,7 @@ public abstract class CloudStateMonitor implements ICloudStateMonitor {
             }
 
             if (!actionNode.getAppId().equals(mAppId)) {
-                Logger.d("onNewEventActionNode the appId is the not the same with lastAppId");
+                Logger.d("onNewEvent the appId is the not the same with lastAppId");
                 mediaAction.stopPlay();
                 voiceAction.stopPlay();
                 this.currentMediaState = null;
@@ -89,9 +92,10 @@ public abstract class CloudStateMonitor implements ICloudStateMonitor {
         }
     }
 
+
     @Override
-    public synchronized void onNewEventActionNode(ActionNode actionNode) {
-        Logger.d("form: " + rokidState.getStateEnum() + " onNewEventActionNode actioNode : " + actionNode + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
+    public synchronized void onNewEvent(ActionNode actionNode) {
+        Logger.d("form: " + rokidState.getStateType() + " onNewEvent actioNode : " + actionNode + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
         if (actionNode != null) {
 
             if (TextUtils.isEmpty(actionNode.getAppId())) {
@@ -101,7 +105,7 @@ public abstract class CloudStateMonitor implements ICloudStateMonitor {
             }
 
             if (!actionNode.getAppId().equals(mAppId)) {
-                Logger.d("onNewEventActionNode the appId is the not the same with lastAppId");
+                Logger.d("onNewEvent the appId is the not the same with lastAppId");
                 checkAppState();
                 return;
             }
@@ -121,7 +125,7 @@ public abstract class CloudStateMonitor implements ICloudStateMonitor {
     @Override
     public synchronized void onMediaStart() {
         currentMediaState = MEDIA_STATE.MEDIA_START;
-        Logger.d("form: " + rokidState.getStateEnum() + " onMediaStart ! " + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
+        Logger.d("form: " + rokidState.getStateType() + " onMediaStart ! " + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
 
         sendMediaReporter(MediaReporter.START);
     }
@@ -129,20 +133,20 @@ public abstract class CloudStateMonitor implements ICloudStateMonitor {
     @Override
     public synchronized void onMediaPause(int position) {
         currentMediaState = MEDIA_STATE.MEDIA_PAUSED;
-        Logger.d("form: " + rokidState.getStateEnum() + " onMediaPause ! position : " + position + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
+        Logger.d("form: " + rokidState.getStateType() + " onMediaPause ! position : " + position + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
         sendMediaReporter(MediaReporter.PAUSED);
     }
 
     @Override
     public synchronized void onMediaResume() {
         currentMediaState = MEDIA_STATE.MEDIA_RESUME;
-        Logger.d("form: " + rokidState.getStateEnum() + " onMediaResume ! " + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
+        Logger.d("form: " + rokidState.getStateType() + " onMediaResume ! " + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
     }
 
     @Override
     public synchronized void onMediaStop() {
         currentMediaState = MEDIA_STATE.MEDIA_STOP;
-        Logger.d("form: " + rokidState.getStateEnum() + " onMediaStop !" + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
+        Logger.d("form: " + rokidState.getStateType() + " onMediaStop !" + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
         if (shouldEndSession) {
             checkAppState();
         } else {
@@ -158,7 +162,7 @@ public abstract class CloudStateMonitor implements ICloudStateMonitor {
     @Override
     public synchronized void onMediaError(int errorCode) {
         currentMediaState = MEDIA_STATE.MEDIA_ERROR;
-        Logger.d("form: " + rokidState.getStateEnum() + " onMediaError ! errorCode : " + errorCode + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
+        Logger.d("form: " + rokidState.getStateType() + " onMediaError ! errorCode : " + errorCode + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
         if (errorCode == RKAudioPlayer.MEDIA_ERROR_TIME_OUT) {
             promoteErrorInfo(ErrorPromoter.ERROR_TYPE.MEDIA_TIME_OUT);
         } else {
@@ -169,14 +173,14 @@ public abstract class CloudStateMonitor implements ICloudStateMonitor {
     @Override
     public synchronized void onVoiceStart() {
         currentVoiceState = VOICE_STATE.VOICE_START;
-        Logger.d("form: " + rokidState.getStateEnum() + " onVoiceStart !" + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
+        Logger.d("form: " + rokidState.getStateType() + " onVoiceStart !" + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
         sendVoiceReporter(VoiceReporter.START);
     }
 
     @Override
     public synchronized void onVoiceStop() {
         currentVoiceState = VOICE_STATE.VOICE_STOP;
-        Logger.d("form: " + rokidState.getStateEnum() + " onVoiceStop !" + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
+        Logger.d("form: " + rokidState.getStateType() + " onVoiceStop !" + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
         if (shouldEndSession) {
             checkAppState();
         } else {
@@ -187,27 +191,27 @@ public abstract class CloudStateMonitor implements ICloudStateMonitor {
     @Override
     public void onVoicePaused() {
         currentVoiceState = VOICE_STATE.VOICE_PAUSED;
-        Logger.d("form: " + rokidState.getStateEnum() + " onVoiceCancled !" + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
+        Logger.d("form: " + rokidState.getStateType() + " onVoiceCancled !" + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
     }
 
     @Override
     public synchronized void onVoiceCancled() {
         currentVoiceState = VOICE_STATE.VOICE_CANCLED;
-        Logger.d("form: " + rokidState.getStateEnum() + " onVoiceCancled !" + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
+        Logger.d("form: " + rokidState.getStateType() + " onVoiceCancled !" + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
         checkAppState();
     }
 
     @Override
     public synchronized void onVoiceError() {
         currentVoiceState = VOICE_STATE.VOICE_ERROR;
-        Logger.d("form: " + rokidState.getStateEnum() + " onVoiceError !" + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
+        Logger.d("form: " + rokidState.getStateType() + " onVoiceError !" + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
         promoteErrorInfo(ErrorPromoter.ERROR_TYPE.TTS_ERROR);
     }
 
     @Override
     public synchronized void onEventErrorCallback(String event, ERROR_CODE errorCode) {
         Logger.e(" event error call back !!!");
-        Logger.e("form: " + rokidState.getStateEnum() + " onEventErrorCallback " + " event : " + event + " errorCode " + errorCode + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
+        Logger.e("form: " + rokidState.getStateType() + " onEventErrorCallback " + " event : " + event + " errorCode " + errorCode + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
         checkAppState();
 //        promoteErrorInfo(ErrorPromoter.ERROR_TYPE.NO_TASK_PROCESS);
     }
@@ -215,7 +219,7 @@ public abstract class CloudStateMonitor implements ICloudStateMonitor {
 
     @Override
     public synchronized void onEventResponseCallback(String event, Response response) {
-        Logger.d("form: " + rokidState.getStateEnum() + " onEventResponseCallback event : " + event + " response : " + response + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
+        Logger.d("form: " + rokidState.getStateType() + " onEventResponseCallback event : " + event + " response : " + response + " currentMediaState: " + currentMediaState + " currentVoiceState " + currentVoiceState);
         ResponseParser.getInstance().parseSendEventResponse(event, response);
     }
 
@@ -236,9 +240,6 @@ public abstract class CloudStateMonitor implements ICloudStateMonitor {
 
             if (actionNode.getVoice() != null) {
                 voiceAction.processAction(actionNode.getVoice());
-                if (actionNode.getConfirmBean() != null) {
-                    FalconCloudTask.getInstance().openSiren(mActionNode.getPickup().isEnable(), mActionNode.getPickup().getDurationInMilliseconds());
-                }
             }
             if (actionNode.getMedia() != null) {
                 mediaAction.processAction(actionNode.getMedia());
@@ -328,7 +329,7 @@ public abstract class CloudStateMonitor implements ICloudStateMonitor {
     }
 
     private boolean isStateInvalid() {
-        Logger.d("form: " + rokidState.getStateEnum() + " isStateInvalid shouldEndSession : " + shouldEndSession + " mediaType : " + currentMediaState + " videoType : " + currentVoiceState +
+        Logger.d("form: " + rokidState.getStateType() + " isStateInvalid shouldEndSession : " + shouldEndSession + " mediaType : " + currentMediaState + " videoType : " + currentVoiceState +
                 " promoteState : " + promoteState);
         return (currentMediaState == null || currentMediaState == MEDIA_STATE.MEDIA_STOP || currentMediaState == MEDIA_STATE.MEDIA_ERROR) && (currentVoiceState == null || currentVoiceState == VOICE_STATE.VOICE_STOP || currentVoiceState == VOICE_STATE.VOICE_CANCLED || currentVoiceState == VOICE_STATE.VOICE_ERROR) && (promoteState == null || promoteState == PROMOTE_STATE.FINISHED);
     }
@@ -336,19 +337,23 @@ public abstract class CloudStateMonitor implements ICloudStateMonitor {
     private void checkAppState() {
         if (!isStateInvalid()) {
             Logger.d(" state is valid , don't suspend cloudstate");
-            return;
+        }else {
+            actionFinished();
         }
-        actionFinished();
     }
 
     protected void exit() {
-        Logger.d("form: " + rokidState.getStateEnum() + " onExitCallback actionFinished");
+        Logger.d("form: " + rokidState.getStateType() + " onExitCallback actionFinished");
         //用户主动退出应用
-        rokidState.finish();
+        FalconCloudTask.getInstance().finishState(rokidState,false);
     }
 
     protected void actionFinished() {
         Logger.d(" all action has finished");
+        if (mActionNode.getConfirmBean() != null) {
+            FalconCloudTask.getInstance().openSiren(mActionNode.getPickup().isEnable(), mActionNode.getPickup().getDurationInMilliseconds());
+        }
+
         //打开拾音
         if (mActionNode.getPickup() != null) {
             Logger.d("pickUp : " + mActionNode.getPickup().toString());
